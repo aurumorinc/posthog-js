@@ -584,3 +584,68 @@ describe('link href capture across SPA navigations', () => {
     expect(result).not.toBe('should-not-be-used');
   });
 });
+
+describe('Xray wrapper guards', () => {
+  it('should safely handle SecurityError when accessing iframe.contentDocument', () => {
+    const iframe = document.createElement('iframe');
+    Object.defineProperty(iframe, 'contentDocument', {
+      get: () => {
+        throw new Error('Permission denied to access property "contentDocument"');
+      }
+    });
+    Object.defineProperty(iframe, 'contentWindow', {
+      get: () => {
+        throw new Error('Permission denied to access property "contentWindow"');
+      }
+    });
+
+    // Should not throw
+    const sn = serializeNodeWithId(iframe, {
+      doc: document,
+      mirror: new Mirror(),
+      blockClass: 'blockblock',
+      blockSelector: null,
+      maskTextClass: 'maskmask',
+      maskTextSelector: null,
+      skipChild: false,
+      inlineStylesheet: true,
+      maskTextFn: undefined,
+      maskInputFn: undefined,
+      slimDOMOptions: {},
+    });
+
+    expect(sn).not.toBeNull();
+    expect(sn?.type).toBe(2); // Element
+  });
+
+  it('should safely handle SecurityError when accessing styleSheet.cssRules', () => {
+    const style = document.createElement('style');
+    document.head.appendChild(style);
+    
+    Object.defineProperty(style, 'sheet', {
+      get: () => ({
+        get cssRules() {
+          throw new Error('Permission denied to access property "cssRules"');
+        }
+      })
+    });
+
+    // Should not throw
+    const sn = serializeNodeWithId(style, {
+      doc: document,
+      mirror: new Mirror(),
+      blockClass: 'blockblock',
+      blockSelector: null,
+      maskTextClass: 'maskmask',
+      maskTextSelector: null,
+      skipChild: false,
+      inlineStylesheet: true,
+      maskTextFn: undefined,
+      maskInputFn: undefined,
+      slimDOMOptions: {},
+    });
+
+    expect(sn).not.toBeNull();
+    expect(sn?.type).toBe(2); // Element
+  });
+});
