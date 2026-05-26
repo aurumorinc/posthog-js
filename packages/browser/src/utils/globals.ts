@@ -36,7 +36,7 @@ import { ErrorTracking } from '@posthog/core'
  */
 
 // eslint-disable-next-line no-restricted-globals
-const win: (Window & typeof globalThis) | undefined = typeof window !== 'undefined' ? window : undefined
+const win: (Window & typeof globalThis) | undefined = (typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : undefined) as any
 
 export type AssignableWindow = Window &
     typeof globalThis & {
