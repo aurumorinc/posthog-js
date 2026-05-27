@@ -146,7 +146,7 @@ export class PostHogLogs implements Extension {
         return this._logger_instance
     }
 
-    flushLogs(transport?: 'XHR' | 'fetch' | 'sendBeacon'): void {
+    flushLogs(transport?: 'XHR' | 'fetch' | 'sendBeacon' | 'playwright'): void {
         if (this._flushTimeout) {
             clearTimeout(this._flushTimeout)
             this._flushTimeout = undefined

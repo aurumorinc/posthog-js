@@ -10,6 +10,9 @@ import {
   hasEmptyShorthandLonghand,
   isNodeMetaEqual,
   stringifyStylesheet,
+  setNodeId,
+  getNodeId,
+  hasNodeId,
 } from '../src/utils';
 import { NodeType } from '@posthog/rrweb-types';
 import type {
@@ -457,6 +460,24 @@ describe('utils', () => {
       expect(mirror.has(5)).toBe(false);
 
       document.body.removeChild(iframe);
+    });
+  });
+
+  describe('WeakMap Node Tracking', () => {
+    it('should store and retrieve node data without mutating the node', () => {
+      const node = document.createElement('div');
+      const data = { id: 1 } as any;
+      
+      expect(hasNodeId(node)).toBe(false);
+      expect(getNodeId(node)).toBeUndefined();
+      
+      setNodeId(node, data);
+      
+      expect(hasNodeId(node)).toBe(true);
+      expect(getNodeId(node)).toBe(data);
+      
+      // Ensure the node itself wasn't mutated with __sn
+      expect((node as any).__sn).toBeUndefined();
     });
   });
 });

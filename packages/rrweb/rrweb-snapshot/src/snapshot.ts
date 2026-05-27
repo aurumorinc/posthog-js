@@ -346,13 +346,29 @@ export function needMaskingText(
   return false;
 }
 
+function getIframeContentWindow(iframe: HTMLIFrameElement): Window | null {
+  try {
+    return iframe.contentWindow;
+  } catch (e) {
+    return null;
+  }
+}
+
+function getIframeContentDocument(iframe: HTMLIFrameElement): Document | null {
+  try {
+    return iframe.contentDocument;
+  } catch (e) {
+    return null;
+  }
+}
+
 // https://stackoverflow.com/a/36155560
 function onceIframeLoaded(
   iframeEl: HTMLIFrameElement,
   listener: () => unknown,
   iframeLoadTimeout: number,
 ) {
-  const win = iframeEl.contentWindow;
+  const win = getIframeContentWindow(iframeEl);
   if (!win) {
     return;
   }
@@ -864,7 +880,7 @@ function serializeElementNode(
   }
   // iframe
   if (tagName === 'iframe' && !keepIframeSrcFn(attributes.src as string)) {
-    if (!(n as HTMLIFrameElement).contentDocument) {
+    if (!getIframeContentDocument(n as HTMLIFrameElement)) {
       // we can't record it directly as we can't see into it
       // preserve the src attribute so a decision can be taken at replay time
       attributes.rr_src = attributes.src;
@@ -1237,7 +1253,7 @@ export function serializeNodeWithId(
     onceIframeLoaded(
       n as HTMLIFrameElement,
       () => {
-        const iframeDoc = (n as HTMLIFrameElement).contentDocument;
+        const iframeDoc = getIframeContentDocument(n as HTMLIFrameElement);
         if (iframeDoc && onIframeLoad) {
           const serializedIframeNode = serializeNodeWithId(iframeDoc, {
             doc: iframeDoc,

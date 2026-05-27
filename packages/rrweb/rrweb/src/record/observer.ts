@@ -611,73 +611,85 @@ function initStyleSheetObserver(
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const insertRule = win.CSSStyleSheet.prototype.insertRule;
-  win.CSSStyleSheet.prototype.insertRule = new Proxy(insertRule, {
-    apply: callbackWrapper(
-      (
-        target: typeof insertRule,
-        thisArg: CSSStyleSheet,
-        argumentsList: [string, number | undefined],
-      ) => {
-        const [rule, index] = argumentsList;
+  try {
+    win.CSSStyleSheet.prototype.insertRule = new Proxy(insertRule, {
+      apply: callbackWrapper(
+        (
+          target: typeof insertRule,
+          thisArg: CSSStyleSheet,
+          argumentsList: [string, number | undefined],
+        ) => {
+          const [rule, index] = argumentsList;
 
-        const { id, styleId } = getIdAndStyleId(
-          thisArg,
-          mirror,
-          stylesheetManager.styleMirror,
-        );
+          const { id, styleId } = getIdAndStyleId(
+            thisArg,
+            mirror,
+            stylesheetManager.styleMirror,
+          );
 
-        if ((id && id !== -1) || (styleId && styleId !== -1)) {
-          styleSheetRuleCb({
-            id,
-            styleId,
-            adds: [{ rule, index }],
-          });
-        }
-        return target.apply(thisArg, argumentsList);
-      },
-    ),
-  });
+          if ((id && id !== -1) || (styleId && styleId !== -1)) {
+            styleSheetRuleCb({
+              id,
+              styleId,
+              adds: [{ rule, index }],
+            });
+          }
+          return target.apply(thisArg, argumentsList);
+        },
+      ),
+    });
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.insertRule', e);
+  }
 
   // Support for deprecated addRule method
-  win.CSSStyleSheet.prototype.addRule = function (
-    this: CSSStyleSheet,
-    selector: string,
-    styleBlock: string,
-    index: number = this.cssRules.length,
-  ) {
-    const rule = `${selector} { ${styleBlock} }`;
-    return win.CSSStyleSheet.prototype.insertRule.apply(this, [rule, index]);
-  };
+  try {
+    win.CSSStyleSheet.prototype.addRule = function (
+      this: CSSStyleSheet,
+      selector: string,
+      styleBlock: string,
+      index: number = this.cssRules.length,
+    ) {
+      const rule = `${selector} { ${styleBlock} }`;
+      return win.CSSStyleSheet.prototype.insertRule.apply(this, [rule, index]);
+    };
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.addRule', e);
+  }
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const deleteRule = win.CSSStyleSheet.prototype.deleteRule;
-  win.CSSStyleSheet.prototype.deleteRule = new Proxy(deleteRule, {
-    apply: callbackWrapper(
-      (
-        target: typeof deleteRule,
-        thisArg: CSSStyleSheet,
-        argumentsList: [number],
-      ) => {
-        const [index] = argumentsList;
+  try {
+    win.CSSStyleSheet.prototype.deleteRule = new Proxy(deleteRule, {
+      apply: callbackWrapper(
+        (
+          target: typeof deleteRule,
+          thisArg: CSSStyleSheet,
+          argumentsList: [number],
+        ) => {
+          const [index] = argumentsList;
 
-        const { id, styleId } = getIdAndStyleId(
-          thisArg,
-          mirror,
-          stylesheetManager.styleMirror,
-        );
+          const { id, styleId } = getIdAndStyleId(
+            thisArg,
+            mirror,
+            stylesheetManager.styleMirror,
+          );
 
-        if ((id && id !== -1) || (styleId && styleId !== -1)) {
-          styleSheetRuleCb({
-            id,
-            styleId,
-            removes: [{ index }],
-          });
-        }
-        return target.apply(thisArg, argumentsList);
-      },
-    ),
-  });
+          if ((id && id !== -1) || (styleId && styleId !== -1)) {
+            styleSheetRuleCb({
+              id,
+              styleId,
+              removes: [{ index }],
+            });
+          }
 
+          return target.apply(thisArg, argumentsList);
+        },
+      ),
+    });
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.deleteRule', e);
+  }
   // Support for deprecated removeRule method
   win.CSSStyleSheet.prototype.removeRule = function (
     this: CSSStyleSheet,
@@ -787,85 +799,89 @@ function initStyleSheetObserver(
       deleteRule: type.prototype.deleteRule,
     };
 
-    type.prototype.insertRule = new Proxy(
-      unmodifiedFunctions[typeKey].insertRule,
-      {
-        apply: callbackWrapper(
-          (
-            target: typeof insertRule,
-            thisArg: CSSRule,
-            argumentsList: [string, number | undefined],
-          ) => {
-            const [rule, index] = argumentsList;
+    try {
+      type.prototype.insertRule = new Proxy(
+        unmodifiedFunctions[typeKey].insertRule,
+        {
+          apply: callbackWrapper(
+            (
+              target: typeof insertRule,
+              thisArg: CSSRule,
+              argumentsList: [string, number | undefined],
+            ) => {
+              const [rule, index] = argumentsList;
 
-            const { id, styleId } = getIdAndStyleId(
-              thisArg.parentStyleSheet,
-              mirror,
-              stylesheetManager.styleMirror,
-            );
+              const { id, styleId } = getIdAndStyleId(
+                thisArg.parentStyleSheet,
+                mirror,
+                stylesheetManager.styleMirror,
+              );
 
-            if ((id && id !== -1) || (styleId && styleId !== -1)) {
-              styleSheetRuleCb({
-                id,
-                styleId,
-                adds: [
-                  {
-                    rule,
-                    index: [
-                      ...getNestedCSSRulePositions(thisArg),
-                      index || 0, // defaults to 0
-                    ],
-                  },
-                ],
-              });
-            }
-            return target.apply(thisArg, argumentsList);
-          },
-        ),
-      },
-    );
+              if ((id && id !== -1) || (styleId && styleId !== -1)) {
+                styleSheetRuleCb({
+                  id,
+                  styleId,
+                  adds: [
+                    {
+                      rule,
+                      index: [
+                        ...getNestedCSSRulePositions(thisArg),
+                        index || 0, // defaults to 0
+                      ],
+                    },
+                  ],
+                });
+              }
+              return target.apply(thisArg, argumentsList);
+            },
+          ),
+        },
+      );
 
-    type.prototype.deleteRule = new Proxy(
-      unmodifiedFunctions[typeKey].deleteRule,
-      {
-        apply: callbackWrapper(
-          (
-            target: typeof deleteRule,
-            thisArg: CSSRule,
-            argumentsList: [number],
-          ) => {
-            const [index] = argumentsList;
+      type.prototype.deleteRule = new Proxy(
+        unmodifiedFunctions[typeKey].deleteRule,
+        {
+          apply: callbackWrapper(
+            (
+              target: typeof deleteRule,
+              thisArg: CSSRule,
+              argumentsList: [number],
+            ) => {
+              const [index] = argumentsList;
 
-            const { id, styleId } = getIdAndStyleId(
-              thisArg.parentStyleSheet,
-              mirror,
-              stylesheetManager.styleMirror,
-            );
+              const { id, styleId } = getIdAndStyleId(
+                thisArg.parentStyleSheet,
+                mirror,
+                stylesheetManager.styleMirror,
+              );
 
-            if ((id && id !== -1) || (styleId && styleId !== -1)) {
-              styleSheetRuleCb({
-                id,
-                styleId,
-                removes: [
-                  { index: [...getNestedCSSRulePositions(thisArg), index] },
-                ],
-              });
-            }
-            return target.apply(thisArg, argumentsList);
-          },
-        ),
-      },
-    );
+              if ((id && id !== -1) || (styleId && styleId !== -1)) {
+                styleSheetRuleCb({
+                  id,
+                  styleId,
+                  removes: [
+                    { index: [...getNestedCSSRulePositions(thisArg), index] },
+                  ],
+                });
+              }
+              return target.apply(thisArg, argumentsList);
+            },
+          ),
+        },
+      );
+    } catch (e) {
+      console.warn(`[KODA-DEBUG] Failed to proxy ${typeKey}.prototype.insertRule/deleteRule`, e);
+    }
   });
 
   return callbackWrapper(() => {
-    win.CSSStyleSheet.prototype.insertRule = insertRule;
-    win.CSSStyleSheet.prototype.deleteRule = deleteRule;
-    replace && (win.CSSStyleSheet.prototype.replace = replace);
-    replaceSync && (win.CSSStyleSheet.prototype.replaceSync = replaceSync);
+    try { win.CSSStyleSheet.prototype.insertRule = insertRule; } catch (e) {}
+    try { win.CSSStyleSheet.prototype.deleteRule = deleteRule; } catch (e) {}
+    try { replace && (win.CSSStyleSheet.prototype.replace = replace); } catch (e) {}
+    try { replaceSync && (win.CSSStyleSheet.prototype.replaceSync = replaceSync); } catch (e) {}
     Object.entries(supportedNestedCSSRuleTypes).forEach(([typeKey, type]) => {
-      type.prototype.insertRule = unmodifiedFunctions[typeKey].insertRule;
-      type.prototype.deleteRule = unmodifiedFunctions[typeKey].deleteRule;
+      try { type.prototype.insertRule = unmodifiedFunctions[typeKey].insertRule; } catch (e) {}
+      try { type.prototype.deleteRule = unmodifiedFunctions[typeKey].deleteRule; } catch (e) {}
     });
   });
 }
@@ -904,34 +920,40 @@ export function initAdoptedStyleSheetObserver(
     };
 
   // Patch adoptedStyleSheets by overriding the original one.
-  Object.defineProperty(host, 'adoptedStyleSheets', {
-    configurable: originalPropertyDescriptor.configurable,
-    enumerable: originalPropertyDescriptor.enumerable,
-    get(): CSSStyleSheet[] {
-      return originalPropertyDescriptor.get?.call(this) as CSSStyleSheet[];
-    },
-    set(sheets: CSSStyleSheet[]) {
-      const result = originalPropertyDescriptor.set?.call(this, sheets);
-      if (hostId !== null && hostId !== -1) {
-        try {
-          stylesheetManager.adoptStyleSheets(sheets, hostId);
-        } catch (e) {
-          // for safety
-        }
-      }
-      return result;
-    },
-  });
-
-  return callbackWrapper(() => {
+  try {
     Object.defineProperty(host, 'adoptedStyleSheets', {
       configurable: originalPropertyDescriptor.configurable,
       enumerable: originalPropertyDescriptor.enumerable,
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      get: originalPropertyDescriptor.get,
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      set: originalPropertyDescriptor.set,
+      get(): CSSStyleSheet[] {
+        return originalPropertyDescriptor.get?.call(this) as CSSStyleSheet[];
+      },
+      set(sheets: CSSStyleSheet[]) {
+        const result = originalPropertyDescriptor.set?.call(this, sheets);
+        if (hostId !== null && hostId !== -1) {
+          try {
+            stylesheetManager.adoptStyleSheets(sheets, hostId);
+          } catch (e) {
+            // for safety
+          }
+        }
+        return result;
+      },
     });
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy adoptedStyleSheets', e);
+  }
+
+  return callbackWrapper(() => {
+    try {
+      Object.defineProperty(host, 'adoptedStyleSheets', {
+        configurable: originalPropertyDescriptor.configurable,
+        enumerable: originalPropertyDescriptor.enumerable,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        get: originalPropertyDescriptor.get,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        set: originalPropertyDescriptor.set,
+      });
+    } catch (e) {}
   });
 }
 
@@ -946,81 +968,89 @@ function initStyleDeclarationObserver(
 ): listenerHandler {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const setProperty = win.CSSStyleDeclaration.prototype.setProperty;
-  win.CSSStyleDeclaration.prototype.setProperty = new Proxy(setProperty, {
-    apply: callbackWrapper(
-      (
-        target: typeof setProperty,
-        thisArg: CSSStyleDeclaration,
-        argumentsList: [string, string, string],
-      ) => {
-        const [property, value, priority] = argumentsList;
+  try {
+    win.CSSStyleDeclaration.prototype.setProperty = new Proxy(setProperty, {
+      apply: callbackWrapper(
+        (
+          target: typeof setProperty,
+          thisArg: CSSStyleDeclaration,
+          argumentsList: [string, string, string],
+        ) => {
+          const [property, value, priority] = argumentsList;
 
-        // ignore this mutation if we do not care about this css attribute
-        if (ignoreCSSAttributes.has(property)) {
-          return setProperty.apply(thisArg, [property, value, priority]);
-        }
-        const { id, styleId } = getIdAndStyleId(
-          thisArg.parentRule?.parentStyleSheet,
-          mirror,
-          stylesheetManager.styleMirror,
-        );
-        if ((id && id !== -1) || (styleId && styleId !== -1)) {
-          styleDeclarationCb({
-            id,
-            styleId,
-            set: {
-              property,
-              value,
-              priority,
-            },
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            index: getNestedCSSRulePositions(thisArg.parentRule!),
-          });
-        }
-        return target.apply(thisArg, argumentsList);
-      },
-    ),
-  });
+          // ignore this mutation if we do not care about this css attribute
+          if (ignoreCSSAttributes.has(property)) {
+            return setProperty.apply(thisArg, [property, value, priority]);
+          }
+          const { id, styleId } = getIdAndStyleId(
+            thisArg.parentRule?.parentStyleSheet,
+            mirror,
+            stylesheetManager.styleMirror,
+          );
+          if ((id && id !== -1) || (styleId && styleId !== -1)) {
+            styleDeclarationCb({
+              id,
+              styleId,
+              set: {
+                property,
+                value,
+                priority,
+              },
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              index: getNestedCSSRulePositions(thisArg.parentRule!),
+            });
+          }
+          return target.apply(thisArg, argumentsList);
+        },
+      ),
+    });
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleDeclaration.prototype.setProperty', e);
+  }
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const removeProperty = win.CSSStyleDeclaration.prototype.removeProperty;
-  win.CSSStyleDeclaration.prototype.removeProperty = new Proxy(removeProperty, {
-    apply: callbackWrapper(
-      (
-        target: typeof removeProperty,
-        thisArg: CSSStyleDeclaration,
-        argumentsList: [string],
-      ) => {
-        const [property] = argumentsList;
+  try {
+    win.CSSStyleDeclaration.prototype.removeProperty = new Proxy(removeProperty, {
+      apply: callbackWrapper(
+        (
+          target: typeof removeProperty,
+          thisArg: CSSStyleDeclaration,
+          argumentsList: [string],
+        ) => {
+          const [property] = argumentsList;
 
-        // ignore this mutation if we do not care about this css attribute
-        if (ignoreCSSAttributes.has(property)) {
-          return removeProperty.apply(thisArg, [property]);
-        }
-        const { id, styleId } = getIdAndStyleId(
-          thisArg.parentRule?.parentStyleSheet,
-          mirror,
-          stylesheetManager.styleMirror,
-        );
-        if ((id && id !== -1) || (styleId && styleId !== -1)) {
-          styleDeclarationCb({
-            id,
-            styleId,
-            remove: {
-              property,
-            },
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            index: getNestedCSSRulePositions(thisArg.parentRule!),
-          });
-        }
-        return target.apply(thisArg, argumentsList);
-      },
-    ),
-  });
+          // ignore this mutation if we do not care about this css attribute
+          if (ignoreCSSAttributes.has(property)) {
+            return removeProperty.apply(thisArg, [property]);
+          }
+          const { id, styleId } = getIdAndStyleId(
+            thisArg.parentRule?.parentStyleSheet,
+            mirror,
+            stylesheetManager.styleMirror,
+          );
+          if ((id && id !== -1) || (styleId && styleId !== -1)) {
+            styleDeclarationCb({
+              id,
+              styleId,
+              remove: {
+                property,
+              },
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              index: getNestedCSSRulePositions(thisArg.parentRule!),
+            });
+          }
+          return target.apply(thisArg, argumentsList);
+        },
+      ),
+    });
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleDeclaration.prototype.removeProperty', e);
+  }
 
   return callbackWrapper(() => {
-    win.CSSStyleDeclaration.prototype.setProperty = setProperty;
-    win.CSSStyleDeclaration.prototype.removeProperty = removeProperty;
+    try { win.CSSStyleDeclaration.prototype.setProperty = setProperty; } catch (e) {}
+    try { win.CSSStyleDeclaration.prototype.removeProperty = removeProperty; } catch (e) {}
   });
 }
 
@@ -1082,27 +1112,31 @@ function initFontObserver({ fontCb, doc }: observerParam): listenerHandler {
   const fontMap = new WeakMap<FontFace, fontParam>();
 
   const originalFontFace = win.FontFace;
-  win.FontFace = function FontFace(
-    family: string,
-    source: string | ArrayBufferLike,
-    descriptors?: FontFaceDescriptors,
-  ) {
-    const fontFace = new originalFontFace(
-      family,
-      source as string | BufferSource,
-      descriptors,
-    );
-    fontMap.set(fontFace, {
-      family,
-      buffer: typeof source !== 'string',
-      descriptors,
-      fontSource:
-        typeof source === 'string'
-          ? source
-          : JSON.stringify(Array.from(new Uint8Array(source))),
-    });
-    return fontFace;
-  } as unknown as typeof FontFace;
+  try {
+    win.FontFace = function FontFace(
+      family: string,
+      source: string | ArrayBufferLike,
+      descriptors?: FontFaceDescriptors,
+    ) {
+      const fontFace = new originalFontFace(
+        family,
+        source as string | BufferSource,
+        descriptors,
+      );
+      fontMap.set(fontFace, {
+        family,
+        buffer: typeof source !== 'string',
+        descriptors,
+        fontSource:
+          typeof source === 'string'
+            ? source
+            : JSON.stringify(Array.from(new Uint8Array(source))),
+      });
+      return fontFace;
+    } as unknown as typeof FontFace;
+  } catch (e) {
+    console.warn('[KODA-DEBUG] Failed to proxy FontFace', e);
+  }
 
   const restoreHandler = patch(
     doc.fonts,
@@ -1125,7 +1159,7 @@ function initFontObserver({ fontCb, doc }: observerParam): listenerHandler {
   );
 
   handlers.push(() => {
-    win.FontFace = originalFontFace;
+    try { win.FontFace = originalFontFace; } catch (e) {}
   });
   handlers.push(restoreHandler);
 

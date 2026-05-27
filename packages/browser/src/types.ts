@@ -183,13 +183,13 @@ export interface RequestWithOptions {
     // Data can be a single object or an array of objects when batched
     data?: Record<string, any> | Record<string, any>[]
     headers?: Record<string, any>
-    transport?: 'XHR' | 'fetch' | 'sendBeacon'
+    transport?: 'XHR' | 'fetch' | 'sendBeacon' | 'playwright'
     method?: 'POST' | 'GET'
     urlQueryArgs?: { compression: Compression }
     callback?: (response: RequestResponse) => void
     timeout?: number
     noRetries?: boolean
-    disableTransport?: ('XHR' | 'fetch' | 'sendBeacon')[]
+    disableTransport?: ('XHR' | 'fetch' | 'sendBeacon' | 'playwright')[]
     disableXHRCredentials?: boolean
     compression?: Compression | 'best-available'
     fetchOptions?: {

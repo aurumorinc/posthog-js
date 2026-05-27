@@ -90,6 +90,11 @@ assignableWindow.__PosthogExtensions__.loadExternalDependency = (
     kind: PostHogExtensionKind,
     callback: (error?: string | Event, event?: Event) => void
 ): void => {
+    // KODA: In monolith mode, extensions are already bundled. We just need to call the callback.
+    if (assignableWindow.__PosthogExtensions__ && kind in assignableWindow.__PosthogExtensions__) {
+        return callback();
+    }
+    
     // remote-config always loads from the token-specific path
     if (kind === 'remote-config') {
         const url = posthog.requestRouter.endpointFor('assets', `/array/${posthog.config.token}/config.js`)

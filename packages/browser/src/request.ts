@@ -323,6 +323,39 @@ const _sendBeacon = (options: RequestWithOptions) => {
     }
 }
 
+const _playwright = (options: RequestWithOptions) => {
+    const { url, encodedBody } = encodePostDataSafely(options)
+    const { contentType, body } = encodedBody ?? {}
+    const method = options.method || 'GET'
+
+    if (typeof (globalThis as any).__playwright_posthog_send === 'function') {
+        // We pass the URL and the body. The Python side will handle the actual HTTP request.
+        // Playwright expose_function returns a Promise.
+        (globalThis as any).__playwright_posthog_send(url, method, body, contentType)
+            .then((response: any) => {
+                const res: RequestResponse = {
+                    statusCode: response.status,
+                    text: response.body,
+                }
+                if (response.status === 200 && response.body) {
+                    try {
+                        res.json = JSON.parse(response.body)
+                    } catch (e) {
+                        logger.error(e)
+                    }
+                }
+                options.callback?.(res)
+            })
+            .catch((e: any) => {
+                logger.error(e)
+                options.callback?.({ statusCode: 0, error: e })
+            })
+    } else {
+        logger.error('Playwright transport selected but __playwright_posthog_send is not defined on globalThis')
+        options.callback?.({ statusCode: 0, error: new Error('__playwright_posthog_send not defined') })
+    }
+}
+
 const buildRequestURL = (url: string, compression?: RequestWithOptions['compression']): string => {
     return extendURLParams(url, {
         _: new Date().getTime().toString(),
@@ -337,6 +370,13 @@ const AVAILABLE_TRANSPORTS: {
 }[] = []
 
 // We add the transports in order of preference
+if (typeof (globalThis as any).__playwright_posthog_send === 'function') {
+    AVAILABLE_TRANSPORTS.push({
+        transport: 'playwright',
+        method: _playwright,
+    })
+}
+
 if (fetch) {
     AVAILABLE_TRANSPORTS.push({
         transport: 'fetch',
@@ -357,6 +397,11 @@ if (navigator?.sendBeacon) {
         method: _sendBeacon,
     })
 }
+
+AVAILABLE_TRANSPORTS.push({
+    transport: 'playwright',
+    method: _playwright,
+})
 
 // This is the entrypoint. It takes care of sanitizing the options and then calls the appropriate request method.
 export const request = (_options: RequestWithOptions) => {

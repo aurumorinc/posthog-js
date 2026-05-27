@@ -270,10 +270,18 @@ export function patch(
       });
     }
 
-    source[name] = wrapped;
+    try {
+      source[name] = wrapped;
+    } catch (e) {
+      // ignore
+    }
 
     return () => {
-      source[name] = original;
+      try {
+        source[name] = original;
+      } catch (e) {
+        // ignore
+      }
     };
   } catch {
     return () => {

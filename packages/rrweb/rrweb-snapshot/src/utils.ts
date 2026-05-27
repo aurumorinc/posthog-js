@@ -531,3 +531,17 @@ export function checkDataURLSize(
 
   return STRIPED_PLACEHOLDER_SVG;
 }
+
+const nodeMap = new WeakMap<Node, any>();
+
+export function setNodeId(node: Node, data: any): void {
+  nodeMap.set(node, data);
+}
+
+export function getNodeId(node: Node): any | undefined {
+  return nodeMap.get(node);
+}
+
+export function hasNodeId(node: Node): boolean {
+  return nodeMap.has(node);
+}
