@@ -13,5 +13,4 @@ assignableWindow.__PosthogExtensions__.rrweb = {
     resetMaxDepthState,
 }
 assignableWindow.__PosthogExtensions__.initSessionRecording = (ph) => new LazyLoadedSessionRecording(ph)
-
 export default rrwebRecord

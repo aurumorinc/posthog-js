@@ -7,6 +7,7 @@ import './web-vitals'
 import './dead-clicks-autocapture'
 import './default-extensions'
 import { init_as_module } from '../posthog-core'
+import { assignableWindow } from '../utils/globals'
 
 // Initialize the global posthog object
 const posthog = init_as_module()
