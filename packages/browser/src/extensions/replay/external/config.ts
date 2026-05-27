@@ -32,6 +32,7 @@ export const defaultNetworkOptions: Required<NetworkRecordOptions> = {
         'track',
         'video',
         'xmlhttprequest',
+        'playwright',
     ],
     maskRequestFn: (data: CapturedNetworkRequest) => data,
     recordHeaders: false,
