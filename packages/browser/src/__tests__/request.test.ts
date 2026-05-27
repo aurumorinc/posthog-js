@@ -619,6 +619,49 @@ describe('request', () => {
         })
     })
 
+    describe('playwright', () => {
+        beforeEach(() => {
+            transport = 'playwright'
+            ;(globalThis as any).__playwright_posthog_send = jest.fn()
+        })
+
+        afterEach(() => {
+            delete (globalThis as any).__playwright_posthog_send
+        })
+
+        it('performs the request with default params', () => {
+            request(
+                createRequest({
+                    url: 'https://any.posthog-instance.com/',
+                    data: { foo: 'bar' },
+                })
+            )
+
+            expect((globalThis as any).__playwright_posthog_send).toHaveBeenCalledWith(
+                'https://any.posthog-instance.com/?_=1700000000000&ver=1.23.45',
+                'GET',
+                '{"foo":"bar"}',
+                'application/json'
+            )
+            expect(mockCallback).toHaveBeenCalledWith({ statusCode: 200, text: '{"status": 1}' })
+        })
+
+        it('calls the callback with error if __playwright_posthog_send is not defined', () => {
+            delete (globalThis as any).__playwright_posthog_send
+            request(
+                createRequest({
+                    url: 'https://any.posthog-instance.com/',
+                    data: { foo: 'bar' },
+                })
+            )
+
+            expect(mockCallback).toHaveBeenCalledWith({
+                statusCode: 0,
+                error: new Error('__playwright_posthog_send not defined'),
+            })
+        })
+    })
+
     describe('native async gzip retry flow', () => {
         let isolatedRequestModule: any
         let isolatedCompression: typeof Compression
