@@ -689,7 +689,6 @@ function initNetworkObserver(
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         win.__posthog_playwright_network_receiver = (data: NetworkData) => {
-            console.log('[PostHog.js] Received playwright network event:', data)
             cb(data)
         }
         playwrightObserver = () => {
