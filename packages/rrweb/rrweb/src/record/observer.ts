@@ -931,9 +931,7 @@ export function initAdoptedStyleSheetObserver(
         return result;
       },
     });
-  } catch (e) {
-    console.warn('[KODA-DEBUG] Failed to proxy adoptedStyleSheets', e);
-  }
+  } catch (e) {}
 
   return callbackWrapper(() => {
     try {
@@ -996,9 +994,7 @@ function initStyleDeclarationObserver(
         },
       ),
     });
-  } catch (e) {
-    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleDeclaration.prototype.setProperty', e);
-  }
+  } catch (e) {}
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const removeProperty = win.CSSStyleDeclaration.prototype.removeProperty;
