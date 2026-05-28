@@ -638,9 +638,7 @@ function initStyleSheetObserver(
         },
       ),
     });
-  } catch (e) {
-    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.insertRule', e);
-  }
+  } catch (e) {}
 
   // Support for deprecated addRule method
   try {
@@ -653,9 +651,7 @@ function initStyleSheetObserver(
       const rule = `${selector} { ${styleBlock} }`;
       return win.CSSStyleSheet.prototype.insertRule.apply(this, [rule, index]);
     };
-  } catch (e) {
-    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.addRule', e);
-  }
+  } catch (e) {}
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const deleteRule = win.CSSStyleSheet.prototype.deleteRule;
@@ -687,9 +683,7 @@ function initStyleSheetObserver(
         },
       ),
     });
-  } catch (e) {
-    console.warn('[KODA-DEBUG] Failed to proxy CSSStyleSheet.prototype.deleteRule', e);
-  }
+  } catch (e) {}
   // Support for deprecated removeRule method
   win.CSSStyleSheet.prototype.removeRule = function (
     this: CSSStyleSheet,
@@ -869,9 +863,7 @@ function initStyleSheetObserver(
           ),
         },
       );
-    } catch (e) {
-      console.warn(`[KODA-DEBUG] Failed to proxy ${typeKey}.prototype.insertRule/deleteRule`, e);
-    }
+    } catch (e) {}
   });
 
   return callbackWrapper(() => {
