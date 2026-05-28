@@ -588,7 +588,7 @@ function initFetchObserver(
                 }
 
                 start = win.performance.now()
-                res = await originalFetch(req)
+                res = await originalFetch.apply(win, [req])
                 end = win.performance.now()
 
                 const responseHeaders: Headers = {}
@@ -678,15 +678,31 @@ function initNetworkObserver(
     // only wrap fetch and xhr if headers or body are being recorded
     let xhrObserver: listenerHandler = () => {}
     let fetchObserver: listenerHandler = () => {}
+    let playwrightObserver: listenerHandler = () => {}
     if (networkOptions.recordHeaders || networkOptions.recordBody) {
         xhrObserver = initXhrObserver(cb, win, networkOptions)
         fetchObserver = initFetchObserver(cb, win, networkOptions)
+    }
+
+    if (networkOptions.initiatorTypes.includes('playwright')) {
+        // Expose a global receiver for Playwright to inject network events
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        win.__posthog_playwright_network_receiver = (data: NetworkData) => {
+            cb(data)
+        }
+        playwrightObserver = () => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            delete win.__posthog_playwright_network_receiver
+        }
     }
 
     initialisedHandler = () => {
         performanceObserver()
         xhrObserver()
         fetchObserver()
+        playwrightObserver()
         initialisedHandler = null
     }
     return initialisedHandler
